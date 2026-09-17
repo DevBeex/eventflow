@@ -1,100 +1,55 @@
-# EventFlow Backend (MVP)
+# EventFlow Backend
 
-> Full product overview, architecture, and recruiter demo: see the root [`README.md`](../README.md).
+Quarkus service for customers, products, orders, transactional outbox publishing, and Kafka-driven notifications.
 
-Quarkus monolith implementing RF-001 through RF-013 from `EventFlow-Requerimientos-MVP.md`.
+Overview and full-stack quick start: [`../README.md`](../README.md).
 
-## Pinned versions
+## Versions
 
 | Component | Version |
 |---|---|
 | Java | 21 |
-| Quarkus platform BOM | 3.33.3 |
+| Quarkus BOM | 3.33.3 |
 | PostgreSQL | 16.6 |
 | Apache Kafka (KRaft) | 3.8.1 (`apache/kafka:3.8.1`) |
-| Maven Wrapper | 3.9.x (via project wrapper) |
 
-## API endpoints
+## Endpoints
 
-| Method | Path | RF |
-|---|---|---|
-| POST | `/api/customers` | RF-001 |
-| GET | `/api/customers` | RF-002 |
-| POST | `/api/products` | RF-003 |
-| GET | `/api/products` | RF-004 |
-| GET | `/api/products/{id}` | RF-005 |
-| POST | `/api/orders` | RF-006 |
-| GET | `/api/orders` | RF-008 |
-| GET | `/api/orders/{id}` | RF-009 |
-| PATCH | `/api/orders/{id}/status` | RF-010 |
-| GET | `/api/notifications` | RF-011 |
-| GET | `/api/notifications/{id}` | RF-012 |
+| Method | Path |
+|---|---|
+| POST / GET | `/api/customers` |
+| POST / GET | `/api/products` |
+| GET | `/api/products/{id}` |
+| POST / GET | `/api/orders` |
+| GET | `/api/orders/{id}` |
+| PATCH | `/api/orders/{id}/status` |
+| GET | `/api/notifications` |
+| GET | `/api/notifications/{id}` |
 
-Background: outbox publisher scheduler (RF-013) and Kafka consumer on topic `order-created` (RF-007).
+Background work: outbox publisher (scheduled) and Kafka consumer on `order-created`.
 
 OpenAPI: `/q/openapi` · Swagger UI: `/q/swagger-ui` · Health: `/q/health`
 
-## Quick start (Docker Compose)
+## Run with Docker Compose
 
-From `backend/`:
+From repo root (preferred):
+
+```bash
+docker compose up --build
+```
+
+Or from `backend/`:
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-From repo root:
+The Compose `tests` service runs `mvn verify` before `app` starts.
 
 ```bash
-docker compose up --build
-```
-
-`app` does not start until the `tests` service finishes `mvn verify` successfully
-(Testcontainers + PostgreSQL/Kafka). The image build itself only packages the app;
-the gate is the Compose `tests` service (and CI `./mvnw verify`).
-
-Stop (keeps volumes):
-
-```bash
-docker compose down
-```
-
-Destructive reset:
-
-```bash
-docker compose down -v
-```
-
-## Local development without Java on PATH
-
-```powershell
-docker run --rm -v "C:/Users/brod2/Documents/repositories/eventflow/backend:/workspace" -w /workspace maven:3.9.11-eclipse-temurin-21 bash -lc "chmod +x mvnw && ./mvnw -B test"
-```
-
-Start dependencies only:
-
-```bash
-docker compose up postgres kafka -d
-```
-
-Run app with Quarkus dev mode inside Docker (after dependencies are up):
-
-```powershell
-docker run --rm -it -v "C:/Users/brod2/Documents/repositories/eventflow/backend:/workspace" -w /workspace -p 8080:8080 --network backend_default `
-  -e DB_HOST=postgres -e KAFKA_BOOTSTRAP_SERVERS=kafka:9092 `
-  maven:3.9.11-eclipse-temurin-21 bash -lc "chmod +x mvnw && ./mvnw -B quarkus:dev"
-```
-
-## Demo script
-
-With stack running on port 8080:
-
-```powershell
-./scripts/demo.ps1
-```
-
-```bash
-chmod +x scripts/demo.sh && ./scripts/demo.sh
+docker compose down       # keep volumes
+docker compose down -v    # reset data
 ```
 
 ## Tests
@@ -104,28 +59,31 @@ chmod +x scripts/demo.sh && ./scripts/demo.sh
 ./mvnw -B verify
 ```
 
-Tests use Quarkus Dev Services: PostgreSQL **16.6** and Redpanda **v24.2.4** (Kafka-compatible). Docker Compose demo uses Apache Kafka **3.8.1**.
+Dev Services / Testcontainers: PostgreSQL **16.6** and Redpanda **v24.2.4** (Kafka API). Compose demo uses Apache Kafka **3.8.1**.
 
-### Automated acceptance coverage
+Covered automatically: customer/product validation, order totals and status transitions, notification after publish/consume.
 
-| AC | Status |
-|---|---|
-| AC-01..AC-11 | Automated in unit/integration tests |
-| AC-14, AC-15, AC-18, AC-22, AC-23 | Automated (`NotificationFlowTest`) |
-| AC-24 | Partial (sequential transition tests; full concurrent race is manual) |
-| AC-25, AC-26 | Automated in `OrderResourceTest` |
-| AC-28, AC-29, AC-33 | Automated in resource tests |
-| AC-02 | Partial (duplicate email sequential; concurrent race manual) |
-| AC-12, AC-16, AC-17, AC-19, AC-20, AC-21 | Manual / documented below |
-| AC-31, AC-32 | Manual compose persistence checks |
+Manual checks worth doing once: concurrent duplicate email, Kafka stop/start while creating an order, compose restart without `-v`.
 
-## Consumer recovery (section 8.2)
+## Demo scripts
 
-If an invalid message stops the consumer channel:
+With the API on port 8080:
 
-1. Inspect logs for topic/partition/offset/eventId.
-2. Stop the application.
-3. For test injections only, advance the consumer group offset explicitly:
+```powershell
+./scripts/demo.ps1
+```
+
+```bash
+chmod +x scripts/demo.sh && ./scripts/demo.sh
+```
+
+## Consumer recovery
+
+If a bad message stops the consumer:
+
+1. Check logs for topic / partition / offset / eventId.
+2. Stop the app.
+3. Only for deliberate test injections, advance the group offset:
 
 ```bash
 docker compose exec kafka /opt/kafka/bin/kafka-consumer-groups.sh \
@@ -135,16 +93,16 @@ docker compose exec kafka /opt/kafka/bin/kafka-consumer-groups.sh \
   --reset-offsets --to-offset <next-offset> --execute
 ```
 
-Never skip offsets for legitimate events without diagnosis. Restart the app after fixing the root cause.
+Do not skip offsets for real business events without diagnosis. Fix the cause, then restart.
 
-## MVP limits
+## Limits
 
-- Single app instance, no auth, one event (`ORDER_CREATED`), one Kafka topic/partition.
-- Invalid Kafka messages block the partition until manual intervention.
-- Outbox relay retries indefinitely every 5 seconds.
-- Kafka retention: 7 days (`604800000` ms).
-- No HTTP idempotency on order creation.
+- One app instance, no auth, single event type and topic/partition.
+- Invalid messages block the partition until handled.
+- Outbox retries every 5 seconds while pending.
+- Kafka retention: 7 days.
+- Order creation is not HTTP-idempotent.
 
-## Environment variables
+## Environment
 
 See `.env.example`.

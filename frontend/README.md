@@ -1,13 +1,13 @@
 # EventFlow Frontend
 
-> Full product overview, architecture, and recruiter demo: see the root [`README.md`](../README.md).
+React 19 SPA to create orders and watch the async notification produced by the backend.
 
-SPA en React 19 para crear órdenes y observar la notificación asíncrona de EventFlow.
+Overview and full-stack quick start: [`../README.md`](../README.md).
 
-## Requisitos e instalación
+## Setup
 
-- Node.js 22 y npm
-- Backend EventFlow en `http://localhost:8080`
+- Node.js 22 + npm
+- Backend on `http://localhost:8080`
 
 ```bash
 npm ci
@@ -15,23 +15,23 @@ copy .env.example .env
 npm run dev
 ```
 
-Vite abre la aplicación y redirige `/api` al backend. `VITE_API_BASE_URL` permite cambiar el prefijo público; no debe contener secretos.
+Vite proxies `/api` to the backend. `VITE_API_BASE_URL` is public config only (no secrets).
 
-## Comandos
+## Scripts
 
-- `npm run dev`: servidor de desarrollo
-- `npm run build` / `npm run preview`: build y previsualización
-- `npm run lint`, `npm run typecheck`, `npm run check:design`: calidad
-- `npm run test:run`: Vitest y Testing Library/MSW
-- `npm run test:e2e`: smoke de Playwright (antes ejecuta `npx playwright install chromium`)
+- `npm run dev` — development server
+- `npm run build` / `npm run preview` — production build
+- `npm run lint`, `npm run typecheck`, `npm run check:design` — quality
+- `npm run test:run` — Vitest
+- `npm run test:e2e` — Playwright (`npx playwright install chromium` first)
 
-## Demo
+## Demo path
 
-Prepara un cliente y dos productos activos (75.00 y 50.00), abre `/demo`, selecciona cantidades 2 y 1 y crea la orden. El detalle muestra el total confirmado y consulta la notificación por 30 segundos. Si tarda, usa «Volver a consultar»; no recrees la orden.
+Create a customer and two active products (75.00 / 50.00), open `/demo`, quantities 2 and 1, create the order once. The detail page shows the confirmed total and polls for the notification (up to 30s). If it is late, use “Volver a consultar”; do not resubmit the order.
 
-La UI usa datos reales. No incluye autenticación, edición de catálogo, pagos ni controles administrativos.
+No login, catalog edit/delete, or payments in this UI.
 
-## Documentación
+## Docs
 
 - [`docs/architecture.md`](docs/architecture.md)
 - [`docs/design-system.md`](docs/design-system.md)
