@@ -41,6 +41,11 @@ function normalizeNumber(value: unknown): unknown {
   return value
 }
 
+/** Parse API JSON with lossless numbers, then coerce numbers to exact strings for Zod codecs. */
+export function parseApiJson(text: string): unknown {
+  return normalizeNumber(parse(text))
+}
+
 function serializeReplacer(_key: string, value: unknown) {
   return typeof value === 'bigint' ? value.toString() : value
 }
@@ -59,7 +64,7 @@ export async function request<T>(path: string, schema: ZodType<T>, options: Requ
       signal: controller.signal,
     })
     const text = await response.text()
-    const raw = text ? normalizeNumber(parse(text)) : null
+    const raw = text ? parseApiJson(text) : null
     if (!response.ok) {
       const body = raw as { error?: string; message?: string; details?: Array<{ field: string; message: string }> } | null
       const code = body?.error ?? `HTTP_${response.status}`
