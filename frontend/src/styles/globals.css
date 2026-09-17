@@ -1,0 +1,14 @@
+@import "tailwindcss";
+@import "./tokens.css";
+@import "./theme.css";
+
+@layer base {
+  * { @apply border-border; }
+  html { font-family: var(--font-sans); }
+  body { @apply m-0 min-h-screen bg-background text-foreground antialiased; }
+  button, [role="button"], a { @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}

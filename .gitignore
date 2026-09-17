@@ -1,0 +1,30 @@
+# Dependencies & build outputs
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/playwright-report/
+frontend/test-results/
+backend/target/
+backend/.quarkus/
+
+# Env & secrets
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+*.log
+
+# Temp / local
+*.tmp
+.cursor/
